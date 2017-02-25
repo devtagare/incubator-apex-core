@@ -563,8 +563,7 @@ public class StramAppLauncher
   private void setTokenRefreshCredentials(LogicalPlan dag, Configuration conf) throws IOException
   {
     String principal = conf.get(StramClientUtils.TOKEN_REFRESH_PRINCIPAL, StramUserLogin.getPrincipal());
-    String keytabPath = principal.equals(StramUserLogin.getPrincipal()) ? conf.get(StramClientUtils.KEY_TAB_FILE, null)
-        : conf.get(StramClientUtils.TOKEN_REFRESH_KEYTAB, null);
+    String keytabPath = conf.get(StramClientUtils.TOKEN_REFRESH_KEYTAB, conf.get(StramClientUtils.KEY_TAB_FILE));
     LOG.debug("User principal is {}, keytab is {}", principal, keytabPath);
     if (keytabPath == null) {
       String keytab = StramUserLogin.getKeytab();
