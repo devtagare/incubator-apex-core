@@ -395,10 +395,9 @@ public class StramClient
     // Set up the container launch context for the application master
     ContainerLaunchContext amContainer = Records.newRecord(ContainerLaunchContext.class);
     Map<ApplicationAccessType, String> aclMap = new HashMap<>();
-    aclMap.put(ApplicationAccessType.VIEW_APP, "*");
-    aclMap.put(ApplicationAccessType.MODIFY_APP, "*");
-    amContainer.setApplicationACLs(aclMap);
-
+    aclMap.put(ApplicationAccessType.VIEW_APP, UserGroupInformation.getLoginUser().getShortUserName());
+    aclMap.put(ApplicationAccessType.MODIFY_APP, UserGroupInformation.getLoginUser().getShortUserName());
+    LOG.debug("Logged in user is {}", UserGroupInformation.getLoginUser().getShortUserName());
     // Setup security tokens
     // If security is enabled get ResourceManager and NameNode delegation tokens.
     // Set these tokens on the container so that they are sent as part of application submission.

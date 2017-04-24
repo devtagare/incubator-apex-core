@@ -150,9 +150,15 @@ public class LaunchContainerRunnable implements Runnable
     LOG.info("Setting up container launch context for containerid={}", container.getId());
     ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
     Map<ApplicationAccessType, String> aclMap = new HashMap<>();
-    aclMap.put(ApplicationAccessType.VIEW_APP, "*");
-    aclMap.put(ApplicationAccessType.MODIFY_APP, "*");
-    ctx.setApplicationACLs(aclMap);
+    try {
+      aclMap.put(ApplicationAccessType.VIEW_APP, UserGroupInformation.getLoginUser().getShortUserName());
+      aclMap.put(ApplicationAccessType.MODIFY_APP, UserGroupInformation.getLoginUser().getShortUserName());
+      LOG.debug("Logged in user is {}", UserGroupInformation.getLoginUser().getShortUserName());
+      ctx.setApplicationACLs(aclMap);
+    } catch (IOException e1) {
+      // TODO Auto-generated catch block
+      e1.printStackTrace();
+    }
 
     setClasspath(containerEnv);
     try {
