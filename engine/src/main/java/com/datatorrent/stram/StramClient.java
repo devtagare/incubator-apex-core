@@ -53,6 +53,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.JarFinder;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
+import org.apache.hadoop.yarn.api.records.ApplicationAccessType;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
@@ -393,6 +394,15 @@ public class StramClient
 
     // Set up the container launch context for the application master
     ContainerLaunchContext amContainer = Records.newRecord(ContainerLaunchContext.class);
+    Map<ApplicationAccessType, String> aclMap = new HashMap<>();
+    try {
+      aclMap.put(ApplicationAccessType.VIEW_APP, UserGroupInformation.getLoginUser().getShortUserName());
+      aclMap.put(ApplicationAccessType.MODIFY_APP, UserGroupInformation.getLoginUser().getShortUserName());
+      LOG.debug("Logged in user is {}", UserGroupInformation.getLoginUser().getShortUserName());
+    } catch (IOException e1) {
+      LOG.error("Error setting application ACL {}", e1);
+    }
+    amContainer.setApplicationACLs(aclMap);
 
     // Setup security tokens
     // If security is enabled get ResourceManager and NameNode delegation tokens.
