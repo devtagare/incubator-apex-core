@@ -54,6 +54,7 @@ import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
+import org.apache.hadoop.yarn.api.records.ApplicationAccessType;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
@@ -125,8 +126,10 @@ public class StramClient
   private String files;
   private LinkedHashSet<String> resources;
   private Set<String> tags = new HashSet<>();
+  private String customKeystoreConfig;
+  private String customKeystorePath;
 
-  // platform dependencies that are not part of Hadoop and need to be deployed,
+// platform dependencies that are not part of Hadoop and need to be deployed,
   // entry below will cause containing jar file from client to be copied to cluster
   private static final Class<?>[] APEX_CLASSES = new Class<?>[]{
       com.datatorrent.netlet.util.Slice.class,
@@ -398,6 +401,14 @@ public class StramClient
 
     // Set up the container launch context for the application master
     ContainerLaunchContext amContainer = Records.newRecord(ContainerLaunchContext.class);
+    Map<ApplicationAccessType, String> aclMap = new HashMap<>();
+    try {
+      aclMap.put(ApplicationAccessType.VIEW_APP, UserGroupInformation.getLoginUser().getShortUserName());
+      aclMap.put(ApplicationAccessType.MODIFY_APP, UserGroupInformation.getLoginUser().getShortUserName());
+    } catch (IOException e1) {
+      LOG.error("Error setting application ACL's", e1);
+    }
+    amContainer.setApplicationACLs(aclMap);
 
     // Setup security tokens
     // If security is enabled get ResourceManager and NameNode delegation tokens.
@@ -447,6 +458,12 @@ public class StramClient
         appPath = new Path(configuredAppPath);
       }
       String libJarsCsv = copyFromLocal(fs, appPath, localJarFiles.toArray(new String[]{}));
+
+      if (UserGroupInformation.isSecurityEnabled() && customKeystoreConfig != null && customKeystorePath != null) {
+    	  String[] customSSLConfArray = {customKeystoreConfig, customKeystorePath};
+    	  String customSSLFileConf = copyFromLocal(fs, appPath, customSSLConfArray);
+    	  LaunchContainerRunnable.addFilesToLocalResources(LocalResourceType.ARCHIVE, customSSLFileConf, localResources, fs);
+      }
 
       LOG.info("libjars: {}", libJarsCsv);
       dag.getAttributes().put(Context.DAGContext.LIBRARY_JARS, libJarsCsv);
@@ -715,5 +732,15 @@ public class StramClient
   public void setFiles(String files)
   {
     this.files = files;
+  }
+
+  public void setCustomKeystoreConfig(String customKeystoreConfig)
+  {
+    this.customKeystoreConfig = customKeystoreConfig;
+  }
+
+  public void setCustomKeystorePath(String customKeystorePath)
+  {
+    this.customKeystorePath = customKeystorePath;
   }
 }

@@ -43,6 +43,7 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
+import org.apache.hadoop.yarn.api.records.ApplicationAccessType;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerLaunchContext;
 import org.apache.hadoop.yarn.api.records.LocalResource;
@@ -148,6 +149,14 @@ public class LaunchContainerRunnable implements Runnable
   {
     LOG.info("Setting up container launch context for containerid={}", container.getId());
     ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
+    Map<ApplicationAccessType, String> aclMap = new HashMap<>();
+    try {
+      aclMap.put(ApplicationAccessType.VIEW_APP, UserGroupInformation.getLoginUser().getShortUserName());
+      aclMap.put(ApplicationAccessType.MODIFY_APP, UserGroupInformation.getLoginUser().getShortUserName());
+    } catch (IOException e1) {
+      LOG.error("Error setting application ACL's", e1);
+    }
+    ctx.setApplicationACLs(aclMap);
 
     setClasspath(containerEnv);
     try {
