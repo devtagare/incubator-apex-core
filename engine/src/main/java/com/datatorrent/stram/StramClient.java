@@ -84,6 +84,7 @@ import com.datatorrent.stram.client.StramClientUtils;
 import com.datatorrent.stram.client.StramClientUtils.ClientRMHelper;
 import com.datatorrent.stram.engine.StreamingContainer;
 import com.datatorrent.stram.plan.logical.LogicalPlan;
+import com.datatorrent.stram.security.ACLManager;
 
 /**
  * Submits application to YARN<p>
@@ -427,6 +428,11 @@ public class StramClient
       amContainer.setTokens(fsTokens);
     }
 
+    // Setup ACLs for the impersonating user
+    if (!UserGroupInformation.getCurrentUser().equals(UserGroupInformation.getLoginUser())) {
+      ACLManager.setupUserACLs(amContainer, UserGroupInformation.getLoginUser().getShortUserName(), conf);
+    }
+
     // set local resources for the application master
     // local files or archives as needed
     // In this scenario, the jar file for the application master is part of the local resources
@@ -542,6 +548,7 @@ public class StramClient
       }
       env.put("CLASSPATH", classPathEnv.toString());
       // propagate to replace node managers user name (effective in non-secure mode)
+      // also useful to indicate original login user during impersonation
       env.put("HADOOP_USER_NAME", UserGroupInformation.getLoginUser().getUserName());
 
       amContainer.setEnvironment(env);

@@ -63,6 +63,7 @@ import com.datatorrent.stram.client.StramClientUtils;
 import com.datatorrent.stram.engine.StreamingContainer;
 import com.datatorrent.stram.plan.logical.LogicalPlan;
 import com.datatorrent.stram.plan.physical.PTOperator;
+import com.datatorrent.stram.security.ACLManager;
 import com.datatorrent.stram.security.StramDelegationTokenIdentifier;
 import com.datatorrent.stram.security.StramDelegationTokenManager;
 
@@ -150,6 +151,16 @@ public class LaunchContainerRunnable implements Runnable
     ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
 
     setClasspath(containerEnv);
+
+    // Setup ACLs for the impersonating user
+    try {
+      String launchUser = System.getenv("HADOOP_USER_NAME");
+      if ((launchUser != null) && !UserGroupInformation.getCurrentUser().getUserName().equals(launchUser)) {
+        ACLManager.setupUserACLs(ctx, launchUser, nmClient.getConfig());
+      }
+    } catch (IOException e) {
+      LOG.warn("Unable to setup user acls for container {}", container.getId(), e);
+    }
     try {
       // propagate to replace node managers user name (effective in non-secure mode)
       containerEnv.put("HADOOP_USER_NAME", UserGroupInformation.getLoginUser().getUserName());
