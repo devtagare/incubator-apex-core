@@ -85,6 +85,7 @@ import com.datatorrent.stram.client.StramClientUtils;
 import com.datatorrent.stram.client.StramClientUtils.ClientRMHelper;
 import com.datatorrent.stram.engine.StreamingContainer;
 import com.datatorrent.stram.plan.logical.LogicalPlan;
+import com.datatorrent.stram.security.ACLManager;
 
 /**
  * Submits application to YARN<p>
@@ -394,16 +395,6 @@ public class StramClient
 
     // Set up the container launch context for the application master
     ContainerLaunchContext amContainer = Records.newRecord(ContainerLaunchContext.class);
-    Map<ApplicationAccessType, String> aclMap = new HashMap<>();
-    try {
-      aclMap.put(ApplicationAccessType.VIEW_APP, UserGroupInformation.getLoginUser().getShortUserName());
-      aclMap.put(ApplicationAccessType.MODIFY_APP, UserGroupInformation.getLoginUser().getShortUserName());
-      LOG.debug("Logged in user is {}", UserGroupInformation.getLoginUser().getShortUserName());
-    } catch (IOException e1) {
-      LOG.error("Error setting application ACL {}", e1);
-    }
-    amContainer.setApplicationACLs(aclMap);
-
     // Setup security tokens
     // If security is enabled get ResourceManager and NameNode delegation tokens.
     // Set these tokens on the container so that they are sent as part of application submission.
@@ -434,6 +425,10 @@ public class StramClient
       credentials.writeTokenStorageToStream(dob);
       ByteBuffer fsTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
       amContainer.setTokens(fsTokens);
+    }
+
+    if (!UserGroupInformation.getCurrentUser().equals(UserGroupInformation.getLoginUser())) {
+      ACLManager.setupLoginACLs(amContainer, conf);
     }
 
     // set local resources for the application master

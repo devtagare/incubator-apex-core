@@ -64,6 +64,7 @@ import com.datatorrent.stram.client.StramClientUtils;
 import com.datatorrent.stram.engine.StreamingContainer;
 import com.datatorrent.stram.plan.logical.LogicalPlan;
 import com.datatorrent.stram.plan.physical.PTOperator;
+import com.datatorrent.stram.security.ACLManager;
 import com.datatorrent.stram.security.StramDelegationTokenIdentifier;
 import com.datatorrent.stram.security.StramDelegationTokenManager;
 
@@ -150,17 +151,15 @@ public class LaunchContainerRunnable implements Runnable
     LOG.info("Setting up container launch context for containerid={}", container.getId());
     ContainerLaunchContext ctx = Records.newRecord(ContainerLaunchContext.class);
 
-    Map<ApplicationAccessType, String> aclMap = new HashMap<>();
-    try {
-      aclMap.put(ApplicationAccessType.VIEW_APP, UserGroupInformation.getLoginUser().getShortUserName());
-      aclMap.put(ApplicationAccessType.MODIFY_APP, UserGroupInformation.getLoginUser().getShortUserName());
-      LOG.debug("Logged in user is {}", UserGroupInformation.getLoginUser().getShortUserName());
-    } catch (IOException e1) {
-      LOG.error("Error setting application ACL {}", e1);
-    }
-    ctx.setApplicationACLs(aclMap);
-
     setClasspath(containerEnv);
+
+    try {
+      if (!UserGroupInformation.getCurrentUser().getUserName().equals(System.getenv("HADOOP_USER_NAME"))) {
+        ACLManager.setupLoginACLs(ctx, nmClient.getConfig());
+      }
+    } catch (IOException e) {
+      LOG.warn("Unable to setup login acl for container {}", container.getId(), e);
+    }
     try {
       // propagate to replace node managers user name (effective in non-secure mode)
       containerEnv.put("HADOOP_USER_NAME", UserGroupInformation.getLoginUser().getUserName());
