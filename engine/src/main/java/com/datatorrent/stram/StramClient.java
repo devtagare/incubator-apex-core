@@ -35,7 +35,6 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
@@ -71,7 +70,6 @@ import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
-
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
 
@@ -84,6 +82,7 @@ import com.datatorrent.stram.client.StramClientUtils;
 import com.datatorrent.stram.client.StramClientUtils.ClientRMHelper;
 import com.datatorrent.stram.engine.StreamingContainer;
 import com.datatorrent.stram.plan.logical.LogicalPlan;
+import com.datatorrent.stram.security.ACLManager;
 
 /**
  * Submits application to YARN<p>
@@ -424,6 +423,10 @@ public class StramClient
       credentials.writeTokenStorageToStream(dob);
       ByteBuffer fsTokens = ByteBuffer.wrap(dob.getData(), 0, dob.getLength());
       amContainer.setTokens(fsTokens);
+    }
+
+    if (!UserGroupInformation.getCurrentUser().equals(UserGroupInformation.getLoginUser())) {
+      ACLManager.setupLoginACLs(amContainer, UserGroupInformation.getLoginUser().getShortUserName(), conf);
     }
 
     // set local resources for the application master
