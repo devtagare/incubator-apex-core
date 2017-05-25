@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.datatorrent.stram.security;
+package org.apache.apex.engine.security;
 
 import java.io.IOException;
 import java.util.Map;
@@ -42,7 +42,7 @@ public class ACLManager
   public static void setupUserACLs(ContainerLaunchContext launchContext, String userName, Configuration conf) throws IOException
   {
     logger.debug("Setup login acls {}", userName);
-    if (areAclsRequired(conf)) {
+    if (areACLsRequired(conf)) {
       logger.debug("Configuring ACLs for {}", userName);
       Map<ApplicationAccessType, String> acls = Maps.newHashMap();
       acls.put(ApplicationAccessType.VIEW_APP, userName);
@@ -51,7 +51,7 @@ public class ACLManager
     }
   }
 
-  public static boolean areAclsRequired(Configuration conf)
+  public static boolean areACLsRequired(Configuration conf)
   {
     logger.debug("Check ACLs required");
     if (conf.getBoolean(YarnConfiguration.YARN_ACL_ENABLE, YarnConfiguration.DEFAULT_YARN_ACL_ENABLE)) {
