@@ -156,6 +156,7 @@ public class LaunchContainerRunnable implements Runnable
 
     // Setup ACLs for the impersonating user
     try {
+      LOG.info("Current user is {}, hadoop user is {}", UserGroupInformation.getCurrentUser().getUserName(), System.getenv("HADOOP_USER_NAME"));
       String launchUser = System.getenv("HADOOP_USER_NAME");
       if (launchUser != null) {
         String launchUserName = new HadoopKerberosName(launchUser).getShortName();

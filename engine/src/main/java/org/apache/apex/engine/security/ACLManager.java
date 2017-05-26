@@ -41,9 +41,9 @@ public class ACLManager
 
   public static void setupUserACLs(ContainerLaunchContext launchContext, String userName, Configuration conf) throws IOException
   {
-    logger.debug("Setup login acls {}", userName);
+    logger.info("Setup login acls {}", userName);
     if (areACLsRequired(conf)) {
-      logger.debug("Configuring ACLs for {}", userName);
+      logger.info("Setting user acl {}", userName);
       Map<ApplicationAccessType, String> acls = Maps.newHashMap();
       acls.put(ApplicationAccessType.VIEW_APP, userName);
       acls.put(ApplicationAccessType.MODIFY_APP, userName);
@@ -53,9 +53,9 @@ public class ACLManager
 
   public static boolean areACLsRequired(Configuration conf)
   {
-    logger.debug("Check ACLs required");
+    logger.info("ACL Enable {}", conf.getBoolean(YarnConfiguration.YARN_ACL_ENABLE, YarnConfiguration.DEFAULT_YARN_ACL_ENABLE));
     if (conf.getBoolean(YarnConfiguration.YARN_ACL_ENABLE, YarnConfiguration.DEFAULT_YARN_ACL_ENABLE)) {
-      logger.debug("Admin ACL {}", conf.get(YarnConfiguration.YARN_ADMIN_ACL));
+      logger.info("Admin ACL {}", conf.get(YarnConfiguration.YARN_ADMIN_ACL));
       if (!YarnConfiguration.DEFAULT_YARN_ADMIN_ACL.equals(conf.get(YarnConfiguration.YARN_ADMIN_ACL))) {
         logger.debug("Non default admin ACL");
         return true;
