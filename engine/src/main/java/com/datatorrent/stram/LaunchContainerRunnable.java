@@ -40,6 +40,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.HadoopKerberosName;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
@@ -156,8 +157,11 @@ public class LaunchContainerRunnable implements Runnable
     // Setup ACLs for the impersonating user
     try {
       String launchUser = System.getenv("HADOOP_USER_NAME");
-      if ((launchUser != null) && !UserGroupInformation.getCurrentUser().getUserName().equals(launchUser)) {
-        ACLManager.setupUserACLs(ctx, launchUser, nmClient.getConfig());
+      if (launchUser != null) {
+        String launchUserName = new HadoopKerberosName(launchUser).getShortName();
+        if (!UserGroupInformation.getCurrentUser().getShortUserName().equals(launchUserName)) {
+          ACLManager.setupUserACLs(ctx, launchUserName, nmClient.getConfig());
+        }
       }
     } catch (IOException e) {
       LOG.warn("Unable to setup user acls for container {}", container.getId(), e);
